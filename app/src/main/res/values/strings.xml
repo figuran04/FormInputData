@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">Form Input Data</string>
+    <string name="nama_mahasiswa">Nama Mahasiswa</string>
+    <string name="nim_mahasiswa">NIM Mahasiswa</string>
+    <string name="simpan">Simpan</string>
+    <string name="logo">Logo</string>
+    <string name="tambah_mahasiswa">Tambah Mahasiswa</string>
+    <string name="daftar_mahasiswa">Daftar Mahasiswa</string>
+</resources>
