@@ -12,24 +12,36 @@ import java.util.ArrayList;
 
 public class MahasiswaAdapter extends BaseAdapter {
     private final Activity activity;
-    private final ArrayList<Mahasiswa> originalList; // data asli
-    private ArrayList<Mahasiswa> filteredList;       // data yang ditampilkan
+    private ArrayList<Mahasiswa> originalList;
+    private ArrayList<Mahasiswa> filteredList;
 
     public MahasiswaAdapter(Activity activity, ArrayList<Mahasiswa> list) {
         this.activity = activity;
-        this.originalList = new ArrayList<>(list); // salin data awal
+        this.originalList = new ArrayList<>(list);
         this.filteredList = new ArrayList<>(list);
     }
 
-    public void filter(String keyword) {
-        keyword = keyword.toLowerCase();
+    public void updateData(ArrayList<Mahasiswa> newData) {
+        originalList.clear();
+        originalList.addAll(newData);
+
         filteredList.clear();
+        filteredList.addAll(newData);
+
+        notifyDataSetChanged();
+    }
+
+
+    public void filter(String keyword) {
+        keyword = keyword.toLowerCase().trim();
+        filteredList.clear();
+
         if (keyword.isEmpty()) {
             filteredList.addAll(originalList);
         } else {
             for (Mahasiswa m : originalList) {
                 if (m.getNama().toLowerCase().contains(keyword) ||
-                    m.getNim().toLowerCase().contains(keyword)) {
+                        m.getNim().toLowerCase().contains(keyword)) {
                     filteredList.add(m);
                 }
             }
@@ -54,14 +66,15 @@ public class MahasiswaAdapter extends BaseAdapter {
 
     @SuppressLint("ViewHolder")
     @Override
-    public View getView(int position, View view, ViewGroup parent) {
-        view = LayoutInflater.from(activity).inflate(android.R.layout.simple_list_item_2, parent, false);
-        TextView tv1 = view.findViewById(android.R.id.text1);
-        TextView tv2 = view.findViewById(android.R.id.text2);
+    public View getView(int position, View convertView, ViewGroup parent) {
+        convertView = LayoutInflater.from(activity).inflate(android.R.layout.simple_list_item_2, parent, false);
+        TextView tv1 = convertView.findViewById(android.R.id.text1);
+        TextView tv2 = convertView.findViewById(android.R.id.text2);
 
-        Mahasiswa m = filteredList.get(position); // ✅ langsung akses list
+        Mahasiswa m = filteredList.get(position);
         tv1.setText(m.getNama());
         tv2.setText("NIM: " + m.getNim());
-        return view;
+
+        return convertView;
     }
 }

@@ -1,19 +1,27 @@
 package com.example.forminputdata;
 
 import android.content.Intent;
+import android.graphics.Color;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AppCompatDelegate;
 import androidx.appcompat.widget.SearchView;
+import androidx.core.view.GravityCompat;
+import androidx.drawerlayout.widget.DrawerLayout;
 
+import com.google.android.material.appbar.MaterialToolbar;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.google.android.material.navigation.NavigationView;
 import com.google.android.material.snackbar.Snackbar;
 
 import java.util.ArrayList;
@@ -25,11 +33,16 @@ public class MainActivity extends AppCompatActivity {
     ArrayList<Mahasiswa> list;
     MahasiswaAdapter adapter;
     TextView tvHasil;
+    SearchView searchView;
+
+    DrawerLayout drawerLayout;
+    NavigationView navigationView;
 
     @Override
     protected void onResume() {
         super.onResume();
-        loadData(); // Refresh data setiap kembali dari FormActivity
+        resetSearch();
+        loadData();
     }
 
     @Override
@@ -38,47 +51,95 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        drawerLayout = findViewById(R.id.drawerLayout);
+        navigationView = findViewById(R.id.navigationView);
+
+// Buka drawer saat tombol menu ditekan
+        MaterialToolbar toolbar = findViewById(R.id.topAppBar);
+        setSupportActionBar(toolbar);
+        toolbar.setNavigationOnClickListener(v -> {
+            drawerLayout.openDrawer(GravityCompat.START);
+        });
+
+
+
         listView = findViewById(R.id.listView);
         fab = findViewById(R.id.fab);
         db = new DatabaseHelper(this);
         tvHasil = findViewById(R.id.tvHasil);
 
-        // Tombol tambah data
         fab.setOnClickListener(v -> {
             startActivity(new Intent(MainActivity.this, FormActivity.class));
         });
 
-        // Klik item untuk edit data
         listView.setOnItemClickListener((parent, view, position, id) -> {
+            Mahasiswa mhs = (Mahasiswa) adapter.getItem(position);
             Intent i = new Intent(MainActivity.this, FormActivity.class);
-            i.putExtra("mahasiswa", (Mahasiswa) adapter.getItem(position)); // pastikan Mahasiswa implement Serializable
+            i.putExtra("mahasiswa", mhs);
             startActivity(i);
         });
 
-        // Klik lama untuk hapus data
         listView.setOnItemLongClickListener((parent, view, position, id) -> {
+            Mahasiswa selected = (Mahasiswa) adapter.getItem(position);
+
+            int idToDelete = selected.getId();  // ✅ Tambahan log
+            Log.d("HAPUS", "ID yang akan dihapus: " + idToDelete);
+
             new AlertDialog.Builder(MainActivity.this)
-                .setTitle("Hapus Data")
-                .setMessage("Yakin ingin menghapus?")
-                .setPositiveButton("Ya", (dialog, which) -> {
-                    int idToDelete = ((Mahasiswa) adapter.getItem(position)).getId();
-                    db.deleteMahasiswa(idToDelete);
-                    loadData(); // Refresh setelah hapus
-                    Snackbar.make(findViewById(R.id.coordinatorLayout), "Data berhasil dihapus", Snackbar.LENGTH_SHORT).show();
-                })
-                .setNegativeButton("Batal", null)
-                .show();
+                    .setTitle("Hapus Data")
+                    .setMessage("Yakin ingin menghapus " + selected.getNama() + "?")
+                    .setPositiveButton("Ya", (dialog, which) -> {
+                        int result = db.deleteMahasiswa(idToDelete);  // pastikan ini return int
+                        if (result > 0) {
+                            Snackbar.make(findViewById(R.id.coordinatorLayout),
+                                    "Data berhasil dihapus", Snackbar.LENGTH_SHORT).show();
+                        } else {
+                            Snackbar.make(findViewById(R.id.coordinatorLayout),
+                                    "Gagal menghapus data", Snackbar.LENGTH_SHORT).show();
+                        }
+                        resetSearch();
+                        loadData();
+                    })
+                    .setNegativeButton("Batal", null)
+                    .show();
             return true;
         });
 
-        // Load data awal
+        navigationView.setNavigationItemSelectedListener(item -> {
+            int id = item.getItemId();
+
+            if (id == R.id.nav_home) {
+                Snackbar.make(drawerLayout, "Beranda diklik", Snackbar.LENGTH_SHORT).show();
+            } else if (id == R.id.nav_keluar) {
+                new AlertDialog.Builder(MainActivity.this)
+                        .setTitle("Konfirmasi")
+                        .setMessage("Apakah Anda yakin ingin keluar?")
+                        .setPositiveButton("Ya", (dialog, which) -> {
+                            finish(); // keluar dari aplikasi
+                        })
+                        .setNegativeButton("Batal", null)
+                        .show();
+            }
+
+            drawerLayout.closeDrawer(GravityCompat.START);
+            return true;
+        });
+
+
         loadData();
+
     }
 
     void loadData() {
         list = db.getAllMahasiswa();
-        adapter = new MahasiswaAdapter(this, list);
-        listView.setAdapter(adapter);
+
+        if (adapter == null) {
+            adapter = new MahasiswaAdapter(this, list);
+            listView.setAdapter(adapter);
+        } else {
+            adapter.updateData(list);
+        }
+
         tvHasil.setText("Jumlah data: " + list.size());
 
         if (list.isEmpty()) {
@@ -86,14 +147,22 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
+    void resetSearch() {
+        if (searchView != null) {
+            searchView.setQuery("", false);
+            searchView.clearFocus();
+        }
+    }
+
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.menu_main, menu);
         MenuItem searchItem = menu.findItem(R.id.action_search);
-        SearchView searchView = (SearchView) searchItem.getActionView();
+        searchView = (SearchView) searchItem.getActionView();;
 
         if (searchView != null) {
             searchView.setQueryHint("Cari nama/NIM...");
+
             searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
                 @Override
                 public boolean onQueryTextChange(String newText) {
@@ -111,5 +180,6 @@ public class MainActivity extends AppCompatActivity {
         }
         return true;
     }
+
 
 }

@@ -2,15 +2,16 @@ package com.example.forminputdata;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.google.android.material.button.MaterialButton;
+
 public class FormActivity extends AppCompatActivity {
     EditText etNama, etNim;
-    Button btnSimpan;
+    MaterialButton btnSimpan, btnKembali;
     DatabaseHelper db;
     Mahasiswa m;
 
@@ -19,12 +20,14 @@ public class FormActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_form);
 
+        // Inisialisasi UI
         etNama = findViewById(R.id.etNama);
         etNim = findViewById(R.id.etNim);
         btnSimpan = findViewById(R.id.btnSimpan);
+        btnKembali = findViewById(R.id.btnKembali);
         db = new DatabaseHelper(this);
 
-        // Cek apakah FormActivity menerima data mahasiswa untuk edit
+        // Ambil data jika sedang dalam mode edit
         Intent i = getIntent();
         if (i != null && i.hasExtra("mahasiswa")) {
             m = (Mahasiswa) i.getSerializableExtra("mahasiswa");
@@ -34,6 +37,7 @@ public class FormActivity extends AppCompatActivity {
             }
         }
 
+        // Aksi tombol Simpan
         btnSimpan.setOnClickListener(v -> {
             String nama = etNama.getText().toString().trim();
             String nim = etNim.getText().toString().trim();
@@ -53,7 +57,10 @@ public class FormActivity extends AppCompatActivity {
                 Toast.makeText(this, "Data berhasil diperbarui", Toast.LENGTH_SHORT).show();
             }
 
-            finish(); // kembali ke MainActivity
+            finish();
         });
+
+        // Aksi tombol Kembali
+        btnKembali.setOnClickListener(v -> finish());
     }
 }

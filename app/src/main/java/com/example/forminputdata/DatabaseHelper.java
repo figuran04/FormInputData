@@ -6,6 +6,7 @@ import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
+import android.util.Log;
 
 import java.util.ArrayList;
 
@@ -21,9 +22,8 @@ public class DatabaseHelper extends SQLiteOpenHelper {
     @Override
     public void onCreate(SQLiteDatabase db) {
         db.execSQL("CREATE TABLE " + TABEL + " (" +
-            "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
-            "nama TEXT, " +
-            "nim TEXT)");
+                "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                "nama TEXT, nim TEXT)");
     }
 
     @Override
@@ -40,58 +40,36 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         db.insert(TABEL, null, cv);
     }
 
-    public void updateMahasiswa(Mahasiswa m) {
+    public int deleteMahasiswa(int id) {
+        SQLiteDatabase db = getWritableDatabase();
+        int result = db.delete("mahasiswa", "id=?", new String[]{String.valueOf(id)});
+        Log.d("DB_DELETE", "Delete mahasiswa id=" + id + " result=" + result);
+        return result; // result = jumlah baris terhapus
+    }
+
+    public int updateMahasiswa(Mahasiswa m) {
         SQLiteDatabase db = getWritableDatabase();
         ContentValues cv = new ContentValues();
         cv.put("nama", m.getNama());
         cv.put("nim", m.getNim());
-        db.update(TABEL, cv, "id=?", new String[]{String.valueOf(m.getId())});
+        int result = db.update("mahasiswa", cv, "id=?", new String[]{String.valueOf(m.getId())});
+        Log.d("DB_UPDATE", "Update mahasiswa id=" + m.getId() + " result=" + result);
+        return result; // result = jumlah baris yang ter-update
     }
 
-    public void deleteMahasiswa(int id) {
-        SQLiteDatabase db = getWritableDatabase();
-        db.delete(TABEL, "id=?", new String[]{String.valueOf(id)});
-    }
 
     public ArrayList<Mahasiswa> getAllMahasiswa() {
         ArrayList<Mahasiswa> list = new ArrayList<>();
         SQLiteDatabase db = getReadableDatabase();
-        @SuppressLint("Recycle") Cursor c = db.rawQuery("SELECT * FROM " + TABEL, null);
+        Cursor c = db.rawQuery("SELECT * FROM mahasiswa", null);
         while (c.moveToNext()) {
-            Mahasiswa m = new Mahasiswa(
-                c.getInt(0),   // id
-                c.getString(1), // nama
-                c.getString(2)  // nim
-            );
-            list.add(m);
+            int id = c.getInt(c.getColumnIndexOrThrow("id"));
+            String nama = c.getString(c.getColumnIndexOrThrow("nama"));
+            String nim = c.getString(c.getColumnIndexOrThrow("nim"));
+            list.add(new Mahasiswa(id, nama, nim)); // ✅ pastikan id diset!
         }
+        c.close();
         return list;
     }
 
-    // Opsional: Dapatkan jumlah data
-    public int getCount() {
-        SQLiteDatabase db = getReadableDatabase();
-        Cursor c = db.rawQuery("SELECT COUNT(*) FROM " + TABEL, null);
-        if (c.moveToFirst()) {
-            return c.getInt(0);
-        }
-        return 0;
-    }
-
-    // Opsional: Cari mahasiswa berdasarkan keyword
-    public ArrayList<Mahasiswa> searchMahasiswa(String keyword) {
-        ArrayList<Mahasiswa> list = new ArrayList<>();
-        SQLiteDatabase db = getReadableDatabase();
-        Cursor c = db.rawQuery("SELECT * FROM " + TABEL + " WHERE nama LIKE ? OR nim LIKE ?",
-            new String[]{"%" + keyword + "%", "%" + keyword + "%"});
-        while (c.moveToNext()) {
-            Mahasiswa m = new Mahasiswa(
-                c.getInt(0),
-                c.getString(1),
-                c.getString(2)
-            );
-            list.add(m);
-        }
-        return list;
-    }
 }
