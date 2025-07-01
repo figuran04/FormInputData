@@ -2,15 +2,16 @@ package com.example.forminputdata;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.widget.EditText;
-import android.widget.Toast;
+// import android.widget.Toast; // Hapus baris ini
 
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.android.material.button.MaterialButton;
+import com.google.android.material.snackbar.Snackbar; // Tambahkan ini
+import com.google.android.material.textfield.TextInputEditText; // Pastikan ini ada
 
 public class FormActivity extends AppCompatActivity {
-    EditText etNama, etNim;
+    TextInputEditText etNama, etNim; // Menggunakan TextInputEditText
     MaterialButton btnSimpan, btnKembali;
     DatabaseHelper db;
     Mahasiswa m;
@@ -42,21 +43,45 @@ public class FormActivity extends AppCompatActivity {
             String nama = etNama.getText().toString().trim();
             String nim = etNim.getText().toString().trim();
 
-            if (nama.isEmpty() || nim.isEmpty()) {
-                Toast.makeText(this, "Nama dan NIM tidak boleh kosong!", Toast.LENGTH_SHORT).show();
+            if (nama.isEmpty()) {
+                etNama.setError("Nama tidak boleh kosong!"); // Menampilkan error spesifik pada TextInputEditText
+                Snackbar.make(findViewById(R.id.formCoordinatorLayout),
+                    "Nama wajib diisi!", Snackbar.LENGTH_SHORT).show();
                 return;
             }
 
+            if (nim.isEmpty()) {
+                etNim.setError("NIM tidak boleh kosong!"); // Menampilkan error spesifik pada TextInputEditText
+                Snackbar.make(findViewById(R.id.formCoordinatorLayout),
+                    "NIM wajib diisi!", Snackbar.LENGTH_SHORT).show();
+                return;
+            }
+
+            // Hapus error jika input sudah tidak kosong
+            etNama.setError(null);
+            etNim.setError(null);
+
             if (m == null) {
-                db.insertMahasiswa(new Mahasiswa(nama, nim));
-                Toast.makeText(this, "Data berhasil ditambahkan", Toast.LENGTH_SHORT).show();
+                long result = db.insertMahasiswa(new Mahasiswa(nama, nim));
+                if (result > 0) {
+                    Snackbar.make(findViewById(R.id.formCoordinatorLayout),
+                        "Data berhasil ditambahkan", Snackbar.LENGTH_SHORT).show();
+                } else {
+                    Snackbar.make(findViewById(R.id.formCoordinatorLayout),
+                        "Gagal menambahkan data", Snackbar.LENGTH_SHORT).show();
+                }
             } else {
                 m.setNama(nama);
                 m.setNim(nim);
-                db.updateMahasiswa(m);
-                Toast.makeText(this, "Data berhasil diperbarui", Toast.LENGTH_SHORT).show();
+                int result = db.updateMahasiswa(m);
+                if (result > 0) {
+                    Snackbar.make(findViewById(R.id.formCoordinatorLayout),
+                        "Data berhasil diperbarui", Snackbar.LENGTH_SHORT).show();
+                } else {
+                    Snackbar.make(findViewById(R.id.formCoordinatorLayout),
+                        "Gagal memperbarui data", Snackbar.LENGTH_SHORT).show();
+                }
             }
-
             finish();
         });
 

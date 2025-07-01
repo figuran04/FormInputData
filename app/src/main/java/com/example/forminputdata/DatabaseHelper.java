@@ -32,12 +32,14 @@ public class DatabaseHelper extends SQLiteOpenHelper {
         onCreate(db);
     }
 
-    public void insertMahasiswa(Mahasiswa m) {
+    public long insertMahasiswa(Mahasiswa m) { // Ubah tipe kembalian ke long
         SQLiteDatabase db = getWritableDatabase();
         ContentValues cv = new ContentValues();
         cv.put("nama", m.getNama());
         cv.put("nim", m.getNim());
-        db.insert(TABEL, null, cv);
+        long result = db.insert(TABEL, null, cv); // Tangkap nilai kembalian
+        db.close(); // Penting: tutup database setelah selesai
+        return result; // Kembalikan hasilnya
     }
 
     public int deleteMahasiswa(int id) {
